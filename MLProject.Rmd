@@ -1,0 +1,106 @@
+---
+title: "Machine Learning Project"
+author: "JC Meriaux"
+date: "September 27, 2015"
+output: html_document
+---
+
+
+#1) Introduction
+
+For this project I used the following environment
+
+* R studio on Mac OS   
+* R package "CARET"   
+* R package "doMC"for code parallelization (registerDoMC(cores = 4);)   
+   
+
+#2) Data cleaning and selection
+
+The data set was visually inspected. Columns that were not relevant (timestamp etc) or columns with mostly NA were removed. At the end of this process 43 features were selected.   
+
+Then a training set (75% of the data) and testing set (25% of the data) were created using the "createDataPartition" command.   
+   
+Last, Scaling and centering pre-processing was applied, using the "preProcess" command. 
+   
+#3) Model training and performance
+   
+The following approaches were done with the data set:
+*	Boosted tree model (glm - stochastic gradient boosting with default parameters)   
+*	Boosted tree model (glm)  with cross-validation.    
+*	Random forest with default parameters   
+         
+##3.1) Boosted tree model (method="gbm")
+The model performance summary is below (confusion matrix on test set):
+
+```{r  step1, echo=FALSE, messages=FALSE, warning=FALSE, fig.width=8,fig.height=4}
+library(caret);
+library(ggplot2);
+
+
+###########################################
+#Load data and samples
+load("./MLPRJ");
+
+#Print confusion matrix on test data
+print(confgbm);
+```
+
+Here is the model accuracy per number of boosiing iteration and max tree depth.
+```{r  step1-2, echo=FALSE, messages=FALSE, warning=FALSE, fig.width=8,fig.height=4}
+ggplot(modfitgbm);
+```
+   
+##3.2) Boosted tree model with cross validation (method="gbm"- 10-fold) 
+  
+The same model was run with cross validation: 10 folds and 10 runs were used (trainControl object).  
+I did not observe any significant performance gain on the test set with cross validation - performance are comparable with 3.1).  
+The model performance summary is below (confusion matrix on test set):  
+   
+```{r  step2, echo=FALSE, messages=FALSE, warning=FALSE, fig.width=8,fig.height=4}
+library(caret);
+library(ggplot2);
+
+#Print confusion matrix
+print(confgbmcv);
+```
+   
+It seems cross validation did not improve the model performance on the test set in our specific scenario (hypothesis: glm already use boosting/sampling on the training set - cross validation might not improve the model in this case ).   
+Here is the model accuracy per number of boosiing iteration and max tree depth.  
+```{r  step2-2, echo=FALSE, messages=FALSE, warning=FALSE, fig.width=8,fig.height=4}
+ggplot(modfitgbmcv);
+
+```
+   
+
+##3.3) Random forest (method="rf")
+
+Random forest is the best performing model, however it needs a significant computing time (2.5h on 4 cores CPU compared with less than 30min for other models).   
+The model performance summary is below (confusion matrix on test set):   
+
+```{r  step3, echo=FALSE, messages=FALSE, warning=FALSE, fig.width=8,fig.height=4}
+library(caret);
+library(ggplot2);
+
+#Print confusion matrix on test data
+print(confbrf);
+```
+
+Here is the model accuracy per number of randomly selected features. It seems 22 features are optimal for better accuracy.
+```{r  step3-2, echo=FALSE, messages=FALSE, warning=FALSE, fig.width=8,fig.height=4}
+ggplot(modfitrf);
+
+```
+
+
+#4) Conclusion
+
+Feature selection is key in this process (removing timestamp and NA columns)
+
+The boosted tree model accuracy is not improved when using cross validation (overall performance was comparable with or without cross validation).  
+
+The best performance was achieved with the random forest algorithm - without cross validation (not experimented because of lack of time). This model reached 100% success on the project submission (20 correct answers).   
+  
+Parallel processing was important when using the random forest algorithm (as it took already 2.5h on a 4 core CPU)
+
+
